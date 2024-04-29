@@ -102,13 +102,22 @@ async def update_inventory(
 @app.get('/get_popular_books')
 async def get_popular_books():
 
-    popular_books = session.query(Records.book_id, func.count(Records.book_id)).filter(
-        Records.status == 'Issue').group_by(Records.book_id).order_by(func.count(Records.book_id).desc()).limit(5).all()
+    popular_books = session.query(
+        Records.book_id,
+        func.count(Records.book_id).label('count')
+    ).filter(
+        Records.status == 'Issue'
+    ).group_by(
+        Records.book_id
+    ).order_by(
+        func.count(Records.book_id).desc()
+    ).limit(5).all()
+    print(popular_books)
     l = []
     for each in popular_books:
         book_id = each[0]
         books = session.query(Books)
         book = books.filter(Books.id == int(book_id)).first()
-        l.append(book.book_name)
+        l.append({"Book": book.book_name, "count": each[1]})
 
     return {"Popular Books": l}

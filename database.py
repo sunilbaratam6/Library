@@ -31,7 +31,8 @@ class Books(Base):
     id = Column(Integer, primary_key=True)
     book_name = Column(String)
     author = Column(String)
-    inventory = relationship("Inventory", uselist=False, back_populates="book")
+    inventory = relationship(
+        "Inventory", uselist=False, back_populates="books")
 
 
 class Inventory(Base):
@@ -40,7 +41,7 @@ class Inventory(Base):
     id = Column(Integer, primary_key=True)
     book_id = Column(Integer, ForeignKey('books.id'), unique=True)
     stock = Column(Integer, default=50)
-    books = relationship("Books", backref="inventory")
+    books = relationship("Books", back_populates="inventory")
 
 
 class Records(Base):

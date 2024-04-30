@@ -9,8 +9,8 @@ DATABASE_URL = "sqlite:///databases.db"
 
 engine = create_engine(DATABASE_URL)
 
-session = sessionmaker(bind=engine)
-session = session()
+session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# session = session()
 
 Base = declarative_base()
 
@@ -37,15 +37,16 @@ class Inventory(Base):
     __tablename__ = "inventory"
 
     id = Column(Integer, primary_key=True)
-    book_id = Column(Integer)
-    stock = Column(Integer, default=0)
+    book_id = Column(Integer, ForeignKey('books.id'))
+    stock = Column(Integer, default=50)
+    books = relationship("Books", backref="inventory")
 
 
 class Records(Base):
     __tablename__ = "records"
 
     id = Column(Integer, primary_key=True)
-    student_id = Column(String)
+    student_id = Column(Integer)
     book_id = Column(String)
     status = Column(String)
 

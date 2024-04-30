@@ -37,12 +37,15 @@ async def add_book(book: BookCreate, db: Session = Depends(get_db)):
 @app.post("/add/inventory", response_model=InventoryResponse)
 async def add_inventory(inventory: InventoryCreate, book_name: str, db: Session = Depends(get_db)):
     books = db.query(Books).filter(Books.book_name == book_name).first()
+
     if books is None:
         raise HTTPException(status_code=404, detail="Book not found")
     inventory = Inventory(book_id=books.id, stock=inventory.stock)
     db.add(inventory)
     db.commit()
-    return InventoryResponse(id=inventory.id, book_id=inventory.book_id, stock=inventory.stock)
+    response_message = f"Stock for book '{books.book_name}' has been updated"
+
+    return InventoryResponse(message=response_message)
 
 
 @app.post("/issue", response_model=RecordResponse)

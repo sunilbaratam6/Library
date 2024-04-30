@@ -32,7 +32,8 @@ class Books(Base):
     book_name = Column(String)
     author = Column(String)
     inventory = relationship(
-        "Inventory", uselist=False, back_populates="books")
+        "Inventory", back_populates="book", uselist=False)
+    record = relationship("Records", back_populates="book")
 
 
 class Inventory(Base):
@@ -41,16 +42,17 @@ class Inventory(Base):
     id = Column(Integer, primary_key=True)
     book_id = Column(Integer, ForeignKey('books.id'), unique=True)
     stock = Column(Integer, default=50)
-    books = relationship("Books", back_populates="inventory")
+    book = relationship("Books", back_populates="inventory")
 
 
 class Records(Base):
     __tablename__ = "records"
 
     id = Column(Integer, primary_key=True)
-    student_id = Column(Integer)
+    student_id = Column(Integer, ForeignKey('books.id'))
     book_id = Column(String)
     status = Column(String)
+    book = relationship("Books", back_populates="record")
 
 
 Base.metadata.create_all(engine)

@@ -13,20 +13,20 @@ async def get_books():
 
 @app.post("/register-student")
 async def student_reg(name: str, standard: str, roll_no: int):
-    S = Students(name=name, standard=standard,
-                 roll_no=roll_no, count_of_books=0)
-    session.add(S)
+    student = Students(name=name, standard=standard,
+                       roll_no=roll_no, count_of_books=0)
+    session.add(student)
     session.commit()
-    return {"User Added": S.name}
+    return {"User Added": student.name}
 
 
 @app.post("/add-book")
 async def add_book(book_name: str, author: str):
-    B = Books(book_name=book_name, author=author)
-    session.add(B)
+    book = Books(book_name=book_name, author=author)
+    session.add(book)
     # session.query(Books).delete()
     session.commit()
-    return {"Book Added": B.book_name}
+    return {"Book Added": book.book_name}
 
 
 @app.post("/add/inventory")
@@ -36,8 +36,8 @@ async def add_inventory(book_name: str, stock: int):
     Invent = session.query(Inventory)
     invent = Invent.filter(Inventory.book_id == book.id)
     if invent is None:
-        I = Inventory(book_id=book.id, stock=stock)
-        session.add(I)
+        inventor = Inventory(book_id=book.id, stock=stock)
+        session.add(inventor)
         session.commit()
         return {"Inventory Added": book_name}
     return {"Already Present"}

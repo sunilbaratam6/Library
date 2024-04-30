@@ -3,44 +3,10 @@ from database import Students, Books, Inventory, Records, session
 from sqlalchemy import func
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, sessionmaker
-
+from typing import List, Optional
+from schemas import *
 
 app = FastAPI()
-
-
-class StudentCreate(BaseModel):
-    name: str
-    standard: str
-    roll_no: int
-
-
-class BookCreate(BaseModel):
-    book_name: str
-    author: str
-
-
-class InventoryCreate(BaseModel):
-    stock: int = 50
-
-
-class RecordCreate(BaseModel):
-    student_id: int
-    book_id: int
-    status: str
-
-
-class InventoryUpdate(BaseModel):
-    new_stock: int
-
-
-class IssueReturn(BaseModel):
-    book_name: str
-    student_roll_no: int
-
-
-class UpdateInventory(BaseModel):
-    book_name: str
-    new_stock: int
 
 
 def get_db():
@@ -51,24 +17,24 @@ def get_db():
         db.close()
 
 
-@app.post("/register-student")
+@app.post("/register-student", response_model=StudentResponse)
 async def student_reg(student: StudentCreate, db: Session = Depends(get_db)):
     student = Students(name=student.name, standard=student.standard,
                        roll_no=student.roll_no, count_of_books=0)
     db.add(student)
     db.commit()
-    return {"User Added": student.name}
+    return StudentResponse(name=student.name, standard=student.standard, roll_no=student.roll_no)
 
 
-@app.post("/add-book")
+@app.post("/add-book", response_model=BookResponse)
 async def add_book(book: BookCreate, db: Session = Depends(get_db)):
     book = Books(book_name=book.book_name, author=book.author)
     db.add(book)
     db.commit()
-    return {"Book Added": book.book_name}
+    return BookResponse(id=book.id, book_name=book.book_name, author=book.author)
 
 
-@app.post("/add/inventory")
+@app.post("/add/inventory", response_model=InventoryResponse)
 async def add_inventory(inventory: InventoryCreate, book_name: str, db: Session = Depends(get_db)):
     books = db.query(Books).filter(Books.book_name == book_name).first()
     if books is None:
@@ -76,10 +42,10 @@ async def add_inventory(inventory: InventoryCreate, book_name: str, db: Session 
     inventory = Inventory(book_id=books.id, stock=inventory.stock)
     db.add(inventory)
     db.commit()
-    return {"Inventory Added": book_name}
+    return InventoryResponse(id=inventory.id, book_id=inventory.book_id, stock=inventory.stock)
 
 
-@app.post("/issue")
+@app.post("/issue", response_model=RecordResponse)
 async def issue(issue_return: IssueReturn, db: Session = Depends(get_db)):
     student = db.query(Students).filter(Students.roll_no ==
                                         issue_return.student_roll_no).first()
@@ -101,10 +67,10 @@ async def issue(issue_return: IssueReturn, db: Session = Depends(get_db)):
     student.count_of_books += 1
     inventory.stock -= 1
     db.commit()
-    return {"Book Issued"}
+    return RecordResponse(student_id=record.student_id, book_id=record.book_id, status=record.status)
 
 
-@app.post("/return")
+@app.post("/return", response_model=BookResponse)
 async def return_back(issue_return: IssueReturn, db: Session = Depends(get_db)):
     student = db.query(Students).filter(Students.roll_no ==
                                         issue_return.student_roll_no).first()
@@ -124,10 +90,10 @@ async def return_back(issue_return: IssueReturn, db: Session = Depends(get_db)):
     student.count_of_books -= 1
     inventory.stock += 1
     db.commit()
-    return {"Book returned"}
+    return BookResponse(book_name=issue_return.book_name)
 
 
-@app.put("/update/{id}")
+@app.put("/update/{id}", response_model=InventoryResponse)
 async def update_inventory(update_inventory: UpdateInventory, db: Session = Depends(get_db)):
     book = db.query(Books).filter(Books.book_name ==
                                   update_inventory.book_name).first()
@@ -139,10 +105,12 @@ async def update_inventory(update_inventory: UpdateInventory, db: Session = Depe
         raise HTTPException(status_code=404, detail="Inventory not found")
     inventory.stock += update_inventory.new_stock
     db.commit()
-    return {"Updated"}
+    response_message = f"Stock for book '{update_inventory.book_name}' has been updated"
+
+    return InventoryResponse(message=response_message)
 
 
-@app.get('/get_popular_books')
+@app.get('/get_popular_books', response_model=List[PopularBookResponse])
 async def get_popular_books(db: Session = Depends(get_db)):
     popular_books = db.query(
         Records.book_id,
@@ -154,9 +122,8 @@ async def get_popular_books(db: Session = Depends(get_db)):
     ).order_by(
         func.count(Records.book_id).desc()
     ).limit(5).all()
-    l = []
-    for each in popular_books:
-        book_id = each[0]
-        book = db.query(Books).filter(Books.id == int(book_id)).first()
-        l.append({"Book": book.book_name, "count": each[1]})
-    return {"Popular Books": l}
+
+    response_data = [{"book_name": db.query(Books).get(
+        book_id).book_name, "count": count} for book_id, count in popular_books]
+
+    return response_data

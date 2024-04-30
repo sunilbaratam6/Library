@@ -45,7 +45,7 @@ class Records(Base):
     __tablename__ = "records"
 
     id = Column(Integer, primary_key=True)
-    student_id = Column(String)
+    student_id = Column(Integer)
     book_id = Column(String)
     status = Column(String)
 

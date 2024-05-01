@@ -63,4 +63,4 @@ class RecordResponse(BaseModel):
 
 class PopularBookResponse(BaseModel):
     book_name: str
-    count: int
+    # count: int

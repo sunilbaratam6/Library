@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from typing import List, Optional
 from schemas import *
 
+
 app = FastAPI()
 
 
@@ -126,7 +127,11 @@ async def get_popular_books(db: Session = Depends(get_db)):
         func.count(Records.book_id).desc()
     ).limit(5).all()
 
-    response_data = [{"book_name": db.query(Books).get(
-        book_id).book_name, "count": count} for book_id, count in popular_books]
+    book_ids = [book_id for book_id, _ in popular_books]
 
-    return response_data
+    books = db.query(Books).filter(Books.id.in_(book_ids)).all()
+    print(type(books))
+    return books
+    # print(popular_books)
+    # response_data = [{"book_name": db.query(Books).get(
+    #     book_id).book_name, "count": count} for book_id, count in popular_books]
